@@ -1,17 +1,34 @@
-import { Brain, TrendingUp, AlertTriangle, Lightbulb, BarChart3 } from "lucide-react";
-import { aiInsights, monthlySalesData, generateProducts } from "@/lib/mock-data";
+import { Brain, TrendingUp, AlertTriangle, Lightbulb, BarChart3, Loader2 } from "lucide-react";
+import { aiInsights, monthlySalesData } from "@/lib/mock-data";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-
-const products = generateProducts();
-const topProducts = [...products].sort((a, b) => b.stock - a.stock).slice(0, 5);
-
-// Simulated forecast data
-const forecastData = monthlySalesData.map((d, i) => ({
-  ...d,
-  forecast: d.sales + Math.floor(Math.random() * 50000) + i * 10000,
-}));
+import { productsApi } from "@/lib/api";
+import { useState, useEffect } from "react";
 
 const AIInsightsPage = () => {
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopProducts = async () => {
+      try {
+        const response = await productsApi.list();
+        // Sort by stock to simulate "demand" or just use top 5
+        const sorted = [...response.data].sort((a, b) => b.stock - a.stock).slice(0, 5);
+        setTopProducts(sorted);
+      } catch (err) {
+        console.error("Failed to load products");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTopProducts();
+  }, []);
+
+  // Simulated forecast data
+  const forecastData = monthlySalesData.map((d, i) => ({
+    ...d,
+    forecast: d.sales + Math.floor(Math.random() * 50000) + i * 10000,
+  }));
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -52,7 +69,14 @@ const AIInsightsPage = () => {
           <h3 className="text-sm font-semibold text-foreground mb-1">Predicted Best Sellers</h3>
           <p className="text-xs text-muted-foreground mb-4">ML-predicted top products for next quarter</p>
           <div className="space-y-3">
-            {topProducts.map((p, i) => (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+                <p className="text-xs text-muted-foreground">Analysing product trends...</p>
+              </div>
+            ) : topProducts.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">No product data available</p>
+            ) : topProducts.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                 <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
                   {i + 1}

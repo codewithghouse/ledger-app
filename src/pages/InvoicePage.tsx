@@ -1,9 +1,7 @@
-import { useState, useMemo } from "react";
-import { generateProducts, generateCustomers } from "@/lib/mock-data";
-import { Plus, Trash2, Mic, MicOff, Printer } from "lucide-react";
-
-const products = generateProducts();
-const customers = generateCustomers();
+import { useState, useMemo, useEffect } from "react";
+import { productsApi, salesApi } from "@/lib/api";
+import { Plus, Trash2, Mic, MicOff, Printer, Loader2 } from "lucide-react";
+import { generateCustomers } from "@/lib/mock-data";
 
 interface InvoiceItem {
   productId: string;
@@ -14,10 +12,33 @@ interface InvoiceItem {
 }
 
 const InvoicePage = () => {
+  const [products, setProducts] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [listening, setListening] = useState(false);
   const [voiceText, setVoiceText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [prodRes, custRes] = await Promise.all([
+          productsApi.list(),
+          // In a real app we'd have a customers API, using mock for now or generating
+          Promise.resolve({ data: generateCustomers() })
+        ]);
+        setProducts(prodRes.data);
+        setCustomers(custRes.data);
+      } catch (err) {
+        console.error("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const addItem = (productId: string) => {
     const p = products.find(pr => pr.id === productId);
@@ -42,6 +63,45 @@ const InvoicePage = () => {
   const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
   const totalGst = useMemo(() => items.reduce((s, i) => s + (i.price * i.qty * i.gst) / 100, 0), [items]);
   const grandTotal = subtotal + totalGst;
+
+  const handleSaveInvoice = async () => {
+    if (!customerId || items.length === 0) {
+      alert("Please select a customer and add items");
+      return;
+    }
+    
+    setSubmitting(true);
+    const customer = customers.find(c => c.id === customerId);
+    const saleData = {
+      invoice_no: `INV-${Date.now().toString().slice(-6)}`,
+      customer_id: customerId,
+      customer_name: customer?.name,
+      items: items.map(i => ({
+        product_id: i.productId,
+        name: i.name,
+        qty: i.qty,
+        price: i.price,
+        gst: i.gst
+      })),
+      subtotal,
+      gst_amount: totalGst,
+      total_amount: grandTotal,
+      payment_mode: "Cash",
+      status: "Paid",
+      date: new Date().toISOString()
+    };
+
+    try {
+      await salesApi.create(saleData);
+      alert("Invoice saved successfully!");
+      setItems([]);
+      setCustomerId("");
+    } catch (err) {
+      alert("Failed to save invoice");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const toggleVoice = () => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
@@ -198,8 +258,13 @@ const InvoicePage = () => {
               <span className="mono text-xl font-bold text-primary">₹{Math.round(grandTotal).toLocaleString("en-IN")}</span>
             </div>
           </div>
-          <button className="w-full mt-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
-            Save Invoice
+          <button
+            onClick={handleSaveInvoice}
+            disabled={submitting || items.length === 0}
+            className="w-full mt-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {submitting ? "Saving..." : "Save Invoice"}
           </button>
         </div>
       </div>

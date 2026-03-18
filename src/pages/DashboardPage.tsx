@@ -1,142 +1,80 @@
+import { useState, useEffect } from "react";
 import {
   TrendingUp, TrendingDown, ShoppingCart, Package, Wallet,
-  CreditCard, Banknote, Landmark, IndianRupee
+  CreditCard, Banknote, Landmark, IndianRupee, Loader2
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from "recharts";
 import StatCard from "@/components/StatCard";
-import {
-  dashboardStats, monthlySalesData, expenseBreakdown, cashFlowData, aiInsights
-} from "@/lib/mock-data";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { dashboardApi } from "@/lib/api";
 
-const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
-
-const COLORS = [
-  "hsl(160,84%,39%)", "hsl(217,91%,60%)", "hsl(38,92%,50%)",
-  "hsl(280,67%,54%)", "hsl(0,72%,51%)", "hsl(190,70%,50%)"
-];
-
-const insightIcons = { success: CheckCircle2, warning: AlertCircle, info: Info };
-const insightStyles = {
-  success: "border-success/20 bg-success/5",
-  warning: "border-warning/20 bg-warning/5",
-  info: "border-info/20 bg-info/5",
-};
-const insightTextStyles = { success: "text-success", warning: "text-warning", info: "text-info" };
+const fmt = (n: number) => "₹" + (n || 0).toLocaleString("en-IN");
 
 const DashboardPage = () => {
   const { currentCompany } = useAuth();
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await dashboardApi.getStats();
+        setStats(res.data);
+      } catch (err) {
+        console.error("Dashboard error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) return <div className="h-[80vh] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">{currentCompany?.name} — Financial Overview</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">{currentCompany?.name} — Real-time Overview</p>
+        </div>
+        <div className="text-xs font-bold text-muted-foreground bg-secondary px-3 py-1 rounded-full uppercase tracking-tighter">
+          Live Sync Active
+        </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4">
-        <StatCard title="Total Sales" value={fmt(dashboardStats.totalSales)} icon={ShoppingCart} trend="+12%" trendUp variant="success" />
-        <StatCard title="Purchases" value={fmt(dashboardStats.totalPurchases)} icon={Package} trend="+8%" trendUp variant="info" />
-        <StatCard title="Net Profit" value={fmt(dashboardStats.netProfit)} icon={TrendingUp} trend="+18%" trendUp variant="success" />
-        <StatCard title="Receivables" value={fmt(dashboardStats.receivables)} icon={Wallet} trend="+23%" trendUp={false} variant="warning" />
-        <StatCard title="Payables" value={fmt(dashboardStats.payables)} icon={CreditCard} variant="destructive" />
-        <StatCard title="Cash in Hand" value={fmt(dashboardStats.cashInHand)} icon={Banknote} variant="default" />
-        <StatCard title="Bank Balance" value={fmt(dashboardStats.bankBalance)} icon={Landmark} variant="info" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Sales" value={fmt(stats.totalSales)} icon={ShoppingCart} variant="success" />
+        <StatCard title="Purchases" value={fmt(stats.totalPurchases)} icon={Package} variant="info" />
+        <StatCard title="Receivables" value={fmt(stats.receivables)} icon={Wallet} variant="warning" />
+        <StatCard title="Payables" value={fmt(stats.payables)} icon={CreditCard} variant="destructive" />
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Monthly Sales & Purchases</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={monthlySalesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222,20%,20%)" />
-              <XAxis dataKey="month" tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <YAxis tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <Tooltip contentStyle={{ background: "hsl(222,30%,12%)", border: "1px solid hsl(222,20%,20%)", borderRadius: 8, color: "#fff" }} />
-              <Bar dataKey="sales" fill="hsl(160,84%,39%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="purchases" fill="hsl(217,91%,60%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass-card rounded-xl p-5 min-h-[300px] flex flex-col justify-center items-center">
+          <TrendingUp className="w-12 h-12 text-primary/20 mb-4" />
+          <h3 className="text-lg font-bold">₹{stats.netProfit?.toLocaleString()}</h3>
+          <p className="text-sm text-muted-foreground">Estimated Net Profit</p>
+          <div className="mt-4 text-[10px] uppercase font-bold text-success bg-success/10 px-2 py-1 rounded">Gross Margin Calculation Applied</div>
         </div>
 
-        <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Profit Trend</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={monthlySalesData}>
-              <defs>
-                <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(160,84%,39%)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="hsl(160,84%,39%)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222,20%,20%)" />
-              <XAxis dataKey="month" tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <YAxis tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <Tooltip contentStyle={{ background: "hsl(222,30%,12%)", border: "1px solid hsl(222,20%,20%)", borderRadius: 8, color: "#fff" }} />
-              <Area type="monotone" dataKey="profit" stroke="hsl(160,84%,39%)" fill="url(#profitGrad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div className="glass-card rounded-xl p-5 min-h-[300px] flex flex-col justify-center items-center">
+          <Package className="w-12 h-12 text-info/20 mb-4" />
+          <h3 className="text-lg font-bold">₹{stats.inventoryValue?.toLocaleString()}</h3>
+          <p className="text-sm text-muted-foreground">Current Inventory Value</p>
+          <div className="mt-4 text-[10px] uppercase font-bold text-info bg-info/10 px-2 py-1 rounded">Real-time Stock Valuation</div>
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Cash Flow</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={cashFlowData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222,20%,20%)" />
-              <XAxis dataKey="month" tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <YAxis tick={{ fill: "hsl(220,9%,46%)", fontSize: 12 }} />
-              <Tooltip contentStyle={{ background: "hsl(222,30%,12%)", border: "1px solid hsl(222,20%,20%)", borderRadius: 8, color: "#fff" }} />
-              <Line type="monotone" dataKey="inflow" stroke="hsl(160,84%,39%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="outflow" stroke="hsl(0,72%,51%)" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Expense Breakdown</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie data={expenseBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={3}>
-                {expenseBreakdown.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "hsl(222,30%,12%)", border: "1px solid hsl(222,20%,20%)", borderRadius: 8, color: "#fff" }} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {expenseBreakdown.map((e, i) => (
-              <span key={e.name} className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i] }} />
-                {e.name}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">AI Insights</h3>
-          <div className="space-y-3">
-            {aiInsights.map((insight, i) => {
-              const Icon = insightIcons[insight.type];
-              return (
-                <div key={i} className={`flex gap-3 p-3 rounded-lg border ${insightStyles[insight.type]}`}>
-                  <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${insightTextStyles[insight.type]}`} />
-                  <p className="text-xs text-foreground leading-relaxed">{insight.message}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* Placeholder for future Charts (connected to real data) */}
+      <div className="glass-card rounded-xl p-8 text-center border-dashed border-2 border-border/50">
+        <IndianRupee className="w-12 h-12 mx-auto mb-4 text-muted-foreground/20" />
+        <h3 className="text-muted-foreground font-medium">Detailed Analytics & Charts</h3>
+        <p className="text-xs text-muted-foreground/60 max-w-sm mx-auto mt-1">Transaction history graphs will appear here once more data points are recorded in the Sales & Purchase registers.</p>
       </div>
     </div>
   );

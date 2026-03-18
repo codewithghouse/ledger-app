@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, BookOpen,
   Landmark, CreditCard, FileMinus, FilePlus, Calendar, BookMarked,
   Wallet, Users, Truck, TrendingUp, BarChart3, PieChart,
-  ClipboardList, ShoppingBag, Brain, LogOut, Building2, ChevronLeft, ChevronRight
+  ClipboardList, ShoppingBag, Brain, LogOut, Building2, ChevronLeft, ChevronRight, Settings
 } from "lucide-react";
 import { useState } from "react";
 
@@ -20,6 +20,7 @@ const menuItems = [
   { icon: FileMinus, label: "Credit Note", path: "/credit-note" },
   { icon: FilePlus, label: "Debit Note", path: "/debit-note" },
   { icon: Calendar, label: "Day Book", path: "/day-book" },
+  { icon: Package, label: "Inventory", path: "/inventory" },
   { icon: BookMarked, label: "Journal Register", path: "/journal" },
   { icon: Users, label: "Ledger", path: "/ledger" },
   { icon: Truck, label: "Delivery Note", path: "/delivery-note" },
@@ -29,7 +30,10 @@ const menuItems = [
   { icon: ClipboardList, label: "Ratio Analysis", path: "/ratios" },
   { icon: ShoppingBag, label: "Purchase Orders", path: "/purchase-orders" },
   { icon: ShoppingCart, label: "Sales Orders", path: "/sales-orders" },
+  { icon: Users, label: "Customers", path: "/customers" },
+  { icon: Building2, label: "Vendors", path: "/vendors" },
   { icon: Brain, label: "AI Insights", path: "/ai-insights" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const AppSidebar = ({ onNavigate, isMobile }: { onNavigate?: () => void; isMobile?: boolean }) => {

@@ -31,6 +31,7 @@ import BankBookPage from "./pages/BankBookPage";
 import DeliveryNotePage from "./pages/DeliveryNotePage";
 import JournalPage from "./pages/JournalPage";
 import NotFound from "./pages/NotFound";
+import ImportPage from "./pages/ImportPage";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const AppRoutes = () => {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/vendors" element={<VendorsPage />} />
+        <Route path="/import" element={<ImportPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, BookOpen,
   Landmark, CreditCard, FileMinus, FilePlus, Calendar, BookMarked,
   Wallet, Users, Truck, TrendingUp, BarChart3, PieChart,
-  ClipboardList, ShoppingBag, Brain, LogOut, Building2, ChevronLeft, ChevronRight, Settings
+  ClipboardList, ShoppingBag, Brain, LogOut, Building2, ChevronLeft, ChevronRight, Settings, FileUp
 } from "lucide-react";
 import { useState } from "react";
 
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Users, label: "Customers", path: "/customers" },
   { icon: Building2, label: "Vendors", path: "/vendors" },
   { icon: Brain, label: "AI Insights", path: "/ai-insights" },
+  { icon: FileUp, label: "Import Excel", path: "/import" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
